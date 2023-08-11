@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman Game JavaScript</title>
+    <link rel="stylesheet" href="/styles/hangmanstyle.css">
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/scripts/hangmanscripts.js" defer></script>
+</head>
+
+<body>
+    <div class="main-container">
+        <%- include('navbar.ejs') %>
+        <%- include('hangmanScores.ejs') %>
+            <div class="container">
+                <div class="hangman-box">
+                    <img src="#" draggable="false" alt="hangman-img">
+                    <h1>Hangman Game</h1>
+                </div>
+                <div class="game-box">
+                    <ul class="word-display"></ul>
+                    <h4 class="hint-text">Hint: <b></b></h4>
+                    <h4 class="guesses-text">Incorrect guesses: <b></b></h4>
+                    <div class="keyboard"></div>
+                </div>
+            </div>
+            <div class="game-modal">
+                <div class="content">
+                    <img src="#" alt="gif">
+                    <h4>Game Over!</h4>
+                    <p>The correct word was: <b id="correctWordDisplay"></b></p>
+                    <button class="play-again">Play Again</button>
+                </div>
+            </div>
+            <div class="addToHangman-container">
+                <%- include('addToHangman.ejs') %>
+            </div>
+    </div>
+    <input type="hidden" id="correctWordInput" value="<%= correctWord %>">
+</body>
+<script>
+    const correctWordInput = document.getElementById("correctWordInput");
+    const correctWord = correctWordInput.value;
+</script>
+
+</html>

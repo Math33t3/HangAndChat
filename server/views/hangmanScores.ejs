@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/styles/hangmanstyle.css">
+</head>
+
+<body>
+    <div class="hangman-scores">
+        <h1>Your Statistics</h1>
+        <h1><%= currentUser.username %></h1>
+        <table>
+            <tr>
+                <th>Games Played</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Win Percentage</th>
+            </tr>
+            <% if (currentUser.hangmanRecords && currentUser.hangmanRecords.length > 0) { %>
+                <% const totalGames = currentUser.hangmanRecords.length; %>
+                <% const wins = currentUser.hangmanRecords.filter(record => record.isWin).length; %>
+                <% const losses = totalGames - wins; %>
+                <% const winPercentage = (wins / totalGames) * 100; %>
+                <tr>
+                    <td><%= totalGames %></td>
+                    <td><%= wins %></td>
+                    <td><%= losses %></td>
+                    <td><%= winPercentage.toFixed(2) %>%</td>
+                </tr>
+            <% } else { %>
+                <tr>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0.00%</td>
+                </tr>
+            <% } %>
+        </table>
+    </div>
+</body>
+
+</html>

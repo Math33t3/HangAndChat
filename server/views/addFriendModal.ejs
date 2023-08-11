@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Friend</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <h1>Add a Friend</h1>
+    <div id="modal-root"></div>
+
+    <script>
+        const socket = io();
+
+        const closeModal = () => {
+            document.getElementById("modal-root").innerHTML = "";
+        };
+
+        const showError = (errorMessage) => {
+            const errorElement = document.createElement("p");
+            errorElement.style.color = "red";
+            errorElement.textContent = errorMessage;
+            document.getElementById("modal-root").appendChild(errorElement);
+        };
+
+        const form = document.createElement("form");
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = "friendName";
+        input.placeholder = "Friend's username";
+        form.appendChild(input);
+
+        const submitButton = document.createElement("button");
+        submitButton.textContent = "Submit";
+        submitButton.type = "submit";
+        form.appendChild(submitButton);
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const friendName = input.value;
+            socket.emit("addFriend", friendName, (response) => {
+                if (response.done) {
+                    // Update friends list here
+                    closeModal();
+                } else {
+                    showError(response.errorMessage);
+                }
+            });
+        });
+
+        document.getElementById("modal-root").appendChild(form);
+    </script>
+</body>
+
+</html>

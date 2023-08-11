@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Login</title>
+</head>
+
+<body>
+  <form id="login-form" method="POST">
+    <h1>Log In</h1>
+    <p id="error" style="color: red;"></p>
+    <div>
+      <label for="username">Username:</label>
+      <input type="text" id="username" name="username" placeholder="Enter Username" required>
+    </div>
+    <div>
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" placeholder="Enter Password" required>
+    </div>
+    <div>
+      <button type="submit">Log In</button>
+      <button type="button" onclick="location.href='/signup'">Create Account</button>
+    </div>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const form = event.target;
+      const username = form.elements.username.value;
+      const password = form.elements.password.value;
+
+      const errorElement = document.getElementById("error");
+      errorElement.textContent = "";
+
+      const credentials = {
+        username: username,
+        password: password
+      };
+
+      fetch("http://localhost:8080/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(credentials)
+      })
+        .then(function (res) {
+          if (!res.ok || res.status >= 400) {
+            throw new Error("Login failed.");
+          }
+          return res.json();
+        })
+        .then(function (data) {
+          if (data && data.loggedIn) {
+            const socket = io();
+            socket.on("connect", function () {
+              console.log("Socket.IO connected");
+              redirectToHome();
+            });
+          } else if (data && data.status) {
+            errorElement.textContent = data.status;
+          }
+        })
+        .catch(function (error) {
+          console.error(error);
+        });
+    });
+
+
+    function redirectToHome() {
+      window.location.href = 'http://localhost:8080/';
+    }
+  </script>
+</body>
+
+</html>
