@@ -3,7 +3,9 @@ dotenv.config();
 import session from "express-session";
 import RedisStore from "connect-redis";
 import createClient from "ioredis";
+import db from "../database/connection.js";
 
+/*
 // Initialize client. fra connect-redis documentation
 export const redisClient = new createClient();
 
@@ -11,12 +13,11 @@ export const redisClient = new createClient();
 const redisStore = new RedisStore({
     client: redisClient,
 });
-
+*/
 export const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET,
     credentials: true,
     name: "sid",
-    store: redisStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -24,7 +25,8 @@ export const sessionMiddleware = session({
         httpOnly: true,
         expires: 1000 * 60 * 60 * 24,
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    }
+    },
+    store: db.createSessionStore(), // Set up the session store using the createSessionStore function
 });
 
 export const compatibility = expressMiddleware => (socket, next) =>
@@ -41,32 +43,24 @@ export const authorizeUser = async (socket, next) => {
             next(new Error("Authorization failed!"));
         } else {
             socket.user = { ...socket.request.session.user };
-            
-            await redisClient.hset(
-                `userid:${socket.user.username}`,
-                "userId",
-                socket.user.userId
+            await db.users.updateOne(
+                { username: socket.user.username },
+                { $set: { connected: true } }
             );
-            await redisClient.hset(
-                `userid:${socket.user.username}`,
-                "connected", true
-            )
-            const redisfriendsList = await redisClient.lrange(`friends:${socket.user.username}`, 0, -1)
-            const friendsList = await compatibilityFriendsList(redisfriendsList);
-            console.log(friendsList)
-            const friendRooms = friendsList.map(friend => friend.userId);
+            
+            const user = await db.users.findOne({ username: socket.user.username });
+            const friendsList = user.friends || [];
+            const friendRooms = friendsList.map(friend => friend.toString());
             if (friendRooms.length > 0) {
                 socket.to(friendRooms).emit("connected", true, socket.user.userId);
             }
+            
             socket.emit("friends", friendsList);
-            const redisMessages = await redisClient.lrange(`chat:${socket.user.userId}`, 0, -1)
-            //min messageformat er to.from.content fra d-message event
-            const messages = redisMessages.map(stringOfMessage => {
-                const prevMessage = stringOfMessage.split(".");
-                return { to: prevMessage[0], from: prevMessage[1], content: prevMessage[2] };
-            })
+            const messages = await db.messages.find({
+                $or: [{ to: socket.user.username }, { from: socket.user.username }]
+            }).toArray();
             if (messages && messages.length > 0) {
-                socket.emit("messages", messages)
+                socket.emit("messages", messages);
             }
             next();
         }
@@ -74,33 +68,6 @@ export const authorizeUser = async (socket, next) => {
         console.error("Error authorizing user:", error);
         next(new Error("Authorization failed"));
     }
-};
-const compatibilityFriendsList = async (friendsList) => {
-    const newFriendsList = [];
-
-    for (let friendUsername of friendsList) {
-        const userIdKey = `userid:${friendUsername}`;
-
-        // Retrieve userId and connected status from Redis
-        const [userId, connectedStatus] = await Promise.all([
-            redisClient.hget(userIdKey, "userId"),
-            redisClient.hget(userIdKey, "connected")
-        ]);
-
-        // Handle cases where userId and connectedStatus are null or undefined
-        const formattedUserId = userId || "";
-        const formattedConnectedStatus = connectedStatus === "true" ? true : false;
-
-        newFriendsList.push({
-            username: friendUsername,
-            userId: formattedUserId,
-            connected: formattedConnectedStatus
-        });
-    }
-
-    console.log("Final friends list:", newFriendsList);
-
-    return newFriendsList;
 };
 
 export const protectRoutes = (req, res, next) => {
@@ -118,7 +85,6 @@ export const protectRoutes = (req, res, next) => {
     }
 };
 
-
 export const checkLoggedIn = (req, res, next) => {
     if (req.session.user && req.session.user.username) {
         res.redirect("/");
@@ -126,10 +92,18 @@ export const checkLoggedIn = (req, res, next) => {
         next();
     }
 };
-
 export async function fetchMessages(userId) {
+    // Assuming you have a 'messages' collection in your MongoDB
+    const messages = await db.collection('messages').find({
+        $or: [{ to: userId }, { from: userId }]
+    }).toArray();
+
+    return messages;
+}
+
+export async function fetchFriendsList(userId) {
     return new Promise((resolve, reject) => {
-        redisClient.lrange(`messages:${userId}`, 0, -1, (error, messages) => {
+        redisClient.lrange(`chats:${userId}`, 0, -1, (error, messages) => {
             if (error) {
                 reject(error);
             } else {
@@ -174,5 +148,87 @@ export const directMessage = async (socket, message) => {
     socket.emit("directMessage", message);
     io.to(message.to).emit("directMessage", message);
 };
-*/
+
+
+export const authorizeUser = async (socket, next) => {
+    try {
+        if (!socket.request.session || !socket.request.session.user) {
+            next(new Error("Authorization failed!"));
+        } else {
+            socket.user = { ...socket.request.session.user };
+            
+            await redisClient.hset(
+                `userid:${socket.user.username}`,
+                "userId",
+                socket.user.userId
+            );
+            await redisClient.hset(
+                `userid:${socket.user.username}`,
+                "connected", true
+            )
+            const redisfriendsList = await redisClient.lrange(`friends:${socket.user.username}`, 0, -1)
+            const friendsList = await compatibilityFriendsList(redisfriendsList);
+            console.log(friendsList)
+            const friendRooms = friendsList.map(friend => friend.userId);
+            if (friendRooms.length > 0) {
+                socket.to(friendRooms).emit("connected", true, socket.user.userId);
+            }
+            socket.emit("friends", friendsList);
+            const redisMessages = await redisClient.lrange(`chat:${socket.user.userId}`, 0, -1)
+            //min messageformat er to.from.content fra d-message event
+            const messages = redisMessages.map(stringOfMessage => {
+                const prevMessage = stringOfMessage.split(".");
+                return { to: prevMessage[0], from: prevMessage[1], content: prevMessage[2] };
+            })
+            if (messages && messages.length > 0) {
+                socket.emit("messages", messages)
+            }
+            next();
+        }
+    } catch (error) {
+        console.error("Error authorizing user:", error);
+        next(new Error("Authorization failed"));
+    }
+};
+
+const compatibilityFriendsList = async (friendsList) => {
+    const newFriendsList = [];
+
+    for (let friendUsername of friendsList) {
+        const userIdKey = `userid:${friendUsername}`;
+
+        // Retrieve userId and connected status from Redis
+        const [userId, connectedStatus] = await Promise.all([
+            redisClient.hget(userIdKey, "userId"),
+            redisClient.hget(userIdKey, "connected")
+        ]);
+
+        // Handle cases where userId and connectedStatus are null or undefined
+        const formattedUserId = userId || "";
+        const formattedConnectedStatus = connectedStatus === "true" ? true : false;
+
+        newFriendsList.push({
+            username: friendUsername,
+            userId: formattedUserId,
+            connected: formattedConnectedStatus
+        });
+    }
+
+    console.log("Final friends list:", newFriendsList);
+
+    return newFriendsList;
+};
+
+export async function fetchMessages(userId) {
+    return new Promise((resolve, reject) => {
+        redisClient.lrange(`chat:${userId}`, 0, -1, (error, messages) => {
+            if (error) {
+                reject(error);
+            } else {
+                const parsedMessages = messages.map((message) => JSON.parse(message));
+                resolve(parsedMessages);
+            }
+        });
+    });
+}*/
 

@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import { redisClient, sessionMiddleware, compatibility, authorizeUser } from "./serverController.js";
+import { sessionMiddleware, compatibility, authorizeUser } from "./serverController.js";
 import db from "../database/connection.js";
 
 
@@ -63,8 +63,69 @@ export const initializeSocket = (server) => {
     });
   });
 
-
   async function addFriend(socket, friendName, callback) {
+    if (friendName === socket.user.username) {
+        callback({ done: false, errorMessage: "Cannot befriend yourself" });
+        return;
+    }
+
+    try {
+        const friendUser = await db.users.findOne({ username: friendName });
+
+        if (!friendUser) {
+            callback({ done: false, errorMessage: "Invalid User" });
+            return;
+        }
+
+        const currentUser = await db.users.findOne({ username: socket.user.username, friends: friendUser._id });
+
+        if (currentUser) {
+            callback({ done: false, errorMessage: "You are already friends" });
+            return;
+        }
+
+        await db.users.updateOne(
+            { username: socket.user.username },
+            { $addToSet: { friends: friendUser._id } }
+        );
+
+        callback({ done: true });
+    } catch (error) {
+        console.error('Error adding friend:', error);
+        callback({ done: false, errorMessage: "An error occurred" });
+    }
+}
+  async function handleDirectMessage(socket, message) {
+    console.log("Received directMessage:", message);
+    message.from = socket.user.userId;
+    try {
+        await db.messages.insertOne(message);
+
+        socket.to(message.to).emit("directMessage", message);
+        socket.emit("directMessage", message);
+    } catch (error) {
+        console.error('Error inserting message:', error);
+    }
+}
+  /*
+
+  REDIS FUNCTIONER
+  async function handleDirectMessage(socket, message) {
+    console.log("Received directMessage:", message);
+    message.from = socket.user.userId;
+
+    const messageStore = [message.to, message.from, message.content].join(".");
+
+    await redisClient.lpush(`chat:${message.to}`, messageStore);
+    await redisClient.lpush(`chat:${message.from}`, messageStore);
+
+    socket.to(message.to).emit("directMessage", message);
+    socket.emit("directMessage", message);
+
+
+
+
+      async function addFriend(socket, friendName, callback) {
     if (friendName === socket.user.username) {
       callback({ done: false, errorMessage: "Cannot befriend yourself" });
       return;
@@ -84,17 +145,6 @@ export const initializeSocket = (server) => {
     await redisClient.lpush(`friends:${socket.user.username}`, friendName);
     callback({ done: true });
   };
-  async function handleDirectMessage(socket, message) {
-    console.log("Received directMessage:", message);
-    message.from = socket.user.userId;
-
-    const messageStore = [message.to, message.from, message.content].join(".");
-
-    await redisClient.lpush(`chat:${message.to}`, messageStore);
-    await redisClient.lpush(`chat:${message.from}`, messageStore);
-
-    socket.to(message.to).emit("directMessage", message);
-    socket.emit("directMessage", message);
-}
+}*/
 
 };

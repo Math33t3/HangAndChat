@@ -1,8 +1,10 @@
 <html>
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hang'n Chat Room</title>
+    <link rel="stylesheet" href="/styles/chatstyles.css">
     <script src="/socket.io/socket.io.js"></script>
 </head>
 
@@ -11,150 +13,157 @@
     <div class="addfriend">
         <%- include('addFriendModal') %>
     </div>
-    <div id="friendsList"></div>
 
     <div id="chatContainer">
+        <div id="friendsList"></div>
+
         <div id="chatMessages">
-            <% if (friendsList && friendsList.length > 0) { %>
-                <div id="chat-panels">
-                    <% friendsList.forEach((friend) => { %>
-                        <div class="chat-panel" id="chat-<%= friend.userId %>">
-                            <div class="message-container">
-                                <% messages.forEach((message) => {
-                                    const sender = friendsList.find((f) => f.userId === message.from);
-                                    const senderUsername = sender ? sender.username : "Unknown";
-                                %>
-                                    <div class="message <%= (message.from === userId) ? 'outgoing' : 'incoming' %>">
-                                        <%= senderUsername %>: <%= message.content %>
-                                    </div>
-                                <% }); %>
+
+        </div>
+        <% if (friendsList && friendsList.length> 0) { %>
+            <div id="chat-panels"></div>
+
+            <% friendsList.forEach((friend)=> { %>
+                <div class="chat-panel" id="chat-<%= friend.userId %>">
+                    <div class="message-container">
+                        <% messages.forEach((message)=> {
+                            const sender = friendsList.find((f) => f.userId === message.from);
+                            const senderUsername = sender ? sender.username : "Unknown";
+                            %>
+                            <div class="message <%= (message.from === userId) ? 'outgoing' : 'incoming' %>">
+                                <%= senderUsername %>: <%= message.content %>
                             </div>
-                        </div>
-                    <% }); %>
+                            <% }); %>
+                    </div>
                 </div>
-                <%- include('chatBox') %>
-            <% } else { %>
-                <div class="no-friends">
-                    <p>You've got no friends</p>
-                </div>
-            <% } %>
-        </div>
-        <div id="selectedFriendChat" style="display: none;"></div>
-        <div id="selectedFriendChatMessages"></div>
-        <div id="messageInput">
-            <form id="chat-form" method="POST">
-                <input type="text" id="message" name="message" placeholder="Type here" autocomplete="off">
-                <button type="submit">Send</button>
-            </form>
-        </div>
+                <% }); %>
     </div>
-</body>
+    <% } else { %>
+        <div class="no-friends">
+            <p>You've got no friends</p>
+        </div>
+        <% } %>
+            </div>
 
-<script>
-    const userId = '<%= user.userId %>';
-    const messages = [];
-    let selectedFriendId;
-    let friendsList = [];
+            <div id="selectedFriendChat" style="display: none;"></div>
+            <div id="selectedFriendChatMessages"></div>
 
-    socket.on("messages", (receivedMessages) => {
-        console.log(receivedMessages);
-        messages.push(...receivedMessages);
-        updateChatMessages(messages, userId);
-    });
+            <div id="messageInput">
+                <form id="chat-form" method="POST">
+                    <input type="text" id="message" name="message" placeholder="Type here" autocomplete="off">
+                    <button type="submit">Send</button>
+                </form>
+            </div>
+            </div>
 
-    function updateChatMessages(messages, userId) {
-        const selectedFriendChatMessages = document.getElementById("selectedFriendChatMessages");
-        selectedFriendChatMessages.innerHTML = ""; // Clear previous messages
+            <script>
+                const userId = '<%= user.userId %>';
+                const messages = [];
+                let selectedFriendId;
+                let friendsList = [];
 
-        messages.forEach((message) => {
-            const messageElement = document.createElement("div");
+                socket.on("messages", (receivedMessages) => {
+                    console.log(receivedMessages);
+                    messages.push(...receivedMessages);
+                    updateChatMessages(messages, userId);
+                });
+                function updateChatMessages(messages, userId, friendId) {
+                    const selectedFriendChatMessages = document.getElementById("selectedFriendChatMessages");
+                    selectedFriendChatMessages.innerHTML = "";
 
-            if (message.from === userId) {
-                messageElement.textContent = `You: ${message.content}`;
-                messageElement.classList.add("outgoing");
-            } else {
-                let senderUsername = "Unknown";
-                for (let i = 0; i < friendsList.length; i++) {
-                    if (friendsList[i].userId === message.from) {
-                        senderUsername = friendsList[i].username;
-                        break;
-                    }
+                    messages.forEach((message) => {
+                        if ((message.from === userId || message.to === userId) && (message.from === friendId || message.to === friendId)) {
+                            const messageElement = document.createElement("div");
+                            const senderUsername = (message.from === userId) ? "You" : friendsList.find(friend => friend.userId === message.from)?.username || "Unknown";
+                            messageElement.textContent = `${senderUsername}: ${message.content}`;
+                            messageElement.classList.add((message.from === userId) ? "outgoing" : "incoming");
+
+                            const chatPanel = document.getElementById(`chat-${friendId}`);
+                            chatPanel.appendChild(messageElement);
+                        }
+                    });
                 }
-                messageElement.textContent = `${senderUsername}: ${message.content}`;
-                messageElement.classList.add("incoming");
-            }
 
-            selectedFriendChatMessages.appendChild(messageElement);
-        });
-    }
+                socket.on("friends", (fList) => {
+                    friendsList = fList;
+                    const tabsContainer = document.getElementById("friendsList");
+                    tabsContainer.innerHTML = "";
 
-    socket.on("friends", (fList) => {
-        friendsList = fList;
-        const tabsContainer = document.getElementById("friendsList");
-        tabsContainer.innerHTML = "";
+                    selectedFriendId = undefined;
 
-        selectedFriendId = undefined;
+                    const chatPanelsContainer = document.getElementById("chat-panels"); // Add this line
 
-        fList.forEach((friend) => {
-            const tab = document.createElement("div");
-            tab.textContent = friend.username;
-            tab.classList.add("friend-tab");
-            tabsContainer.appendChild(tab);
+                    fList.forEach((friend) => {
+                        const tab = document.createElement("div");
+                        tab.textContent = friend.username;
+                        tab.classList.add("friend-tab");
+                        tabsContainer.appendChild(tab);
 
-            tab.addEventListener("click", () => {
-                selectedFriendId = friend.userId;
-                const chatPanels = document.querySelectorAll(".chat-panel");
+                        tab.addEventListener("click", () => {
+                            selectedFriendId = friend.userId;
+                            const chatPanels = document.querySelectorAll(".chat-panel");
 
-                chatPanels.forEach((panel) => {
-                    panel.style.display = "none";
+                            chatPanels.forEach((panel) => {
+                                panel.classList.remove("active"); // Hide all chat panels
+                            });
+
+                            const selectedFriendChat = document.getElementById(`chat-${selectedFriendId}`);
+                            if (selectedFriendChat) {
+                                selectedFriendChat.classList.add("active"); // Show the selected friend's chat panel
+                            } else {
+                                // Create the chat panel if it doesn't exist
+                                const chatPanel = document.createElement("div");
+                                chatPanel.classList.add("chat-panel");
+                                chatPanel.id = `chat-${selectedFriendId}`;
+                                chatPanelsContainer.appendChild(chatPanel);
+                            }
+
+                            console.log("Switching to chat with", friend);
+
+                            // Update chat messages for the selected friend
+                            updateChatMessages(messages, userId, selectedFriendId);
+                        });
+                    });
+
+                    console.log("Received friendsList from server:", fList);
                 });
 
-                const selectedFriendChat = document.getElementById(`chat-${selectedFriendId}`);
-                if (selectedFriendChat) {
-                    selectedFriendChat.style.display = "block";
+
+                const chatForm = document.getElementById("chat-form");
+                const messageInput = document.getElementById("message");
+
+                async function sendMessage(content, selectedFriendId) {
+                    if (content.trim() !== "" && selectedFriendId) {
+                        const message = {
+                            to: selectedFriendId,
+                            content: content,
+                            from: userId
+                        };
+
+                        try {
+                            console.log("Before emitting message:", message);
+                            await socket.emit("directMessage", message);
+                            console.log("After emitting message:", message);
+
+                            messages.push(message);
+                            updateChatMessages(messages, userId);
+                        } catch (error) {
+                            console.error("Error emitting directMessage:", error);
+                        }
+                    }
                 }
 
-                console.log("Switching to chat with", friend);
-            });
-        });
+                chatForm.addEventListener("submit", async (event) => {
+                    event.preventDefault();
+                    const content = messageInput.value;
+                    sendMessage(content, selectedFriendId);
+                    messageInput.value = "";
+                });
 
-        console.log("Received friendsList from server:", fList);
-    });
-
-    const chatForm = document.getElementById("chat-form");
-    const messageInput = document.getElementById("message");
-
-    async function sendMessage(content, selectedFriendId) {
-        if (content.trim() !== "" && selectedFriendId) {
-            const message = {
-                to: selectedFriendId,
-                content: content,
-                from: userId
-            };
-
-            try {
-                console.log("Before emitting message:", message);
-                await socket.emit("directMessage", message);
-                console.log("After emitting message:", message);
-
-                messages.push(message);
-                updateChatMessages(messages, userId);
-            } catch (error) {
-                console.error("Error emitting directMessage:", error);
-            }
-        }
-    }
-
-    chatForm.addEventListener("submit", async (event) => {
-        event.preventDefault();
-        const content = messageInput.value;
-        sendMessage(content, selectedFriendId);
-        messageInput.value = "";
-    });
-
-    socket.on("directMessage", (message) => {
-        updateChatMessages([message]);
-    });
-</script>
+                socket.on("directMessage", (message) => {
+                    updateChatMessages([message]);
+                });
+            </script>
+</body>
 
 </html>

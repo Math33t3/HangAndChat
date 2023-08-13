@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb';
+import session from 'express-session';
 
 const URL = "mongodb://127.0.0.1:27017";
 const client = new MongoClient(URL);
@@ -10,8 +11,6 @@ async function populateHangmanWordlist() {
 
         // Clear data
         await wordListCollection.deleteMany({});
-
-
         const wordList = [
             {
                 word: "guitar",
@@ -296,5 +295,46 @@ async function populateHangmanWordlist() {
 
 export default {
     users: db.collection("users"),
-    wordList: db.collection("HangmanWordlist")
+    wordList: db.collection("HangmanWordlist"),
+    messages: db.collection("messages"),
+    client: client, 
+    createSessionStore: () => {
+        const sessions = db.collection("sessions");
+        
+        return new MongoSessionStore(sessions);
+    }
 };
+
+class MongoSessionStore extends session.Store {
+    constructor(sessions) {
+        super();
+        this.sessions = sessions;
+    }
+
+    async get(sid, callback) {
+        try {
+            const session = await this.sessions.findOne({ _id: sid });
+            callback(null, session ? session.session : null);
+        } catch (error) {
+            callback(error);
+        }
+    }
+
+    async set(sid, session, callback) {
+        try {
+            await this.sessions.updateOne({ _id: sid }, { $set: { session } }, { upsert: true });
+            callback(null);
+        } catch (error) {
+            callback(error);
+        }
+    }
+
+    async destroy(sid, callback) {
+        try {
+            await this.sessions.deleteOne({ _id: sid });
+            callback(null);
+        } catch (error) {
+            callback(error);
+        }
+    }
+}

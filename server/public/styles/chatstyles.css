@@ -1,0 +1,44 @@
+
+.friend-tab {
+    cursor: pointer;
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin: 5px;
+    display: inline-block;
+    background-color: #f0f0f0;
+}
+
+.friend-tab.active {
+    background-color: #ccc;
+}
+
+.chat-panel {
+    display: none;
+}
+
+.chat-panel.active {
+    display: block;
+}
+
+
+#chatContainer {
+    margin-top: 20px;
+}
+
+.message-container {
+    padding: 10px;
+}
+
+.message {
+    margin: 5px;
+    padding: 5px;
+    border-radius: 4px;
+}
+
+.incoming {
+    background-color: #f0f0f0;
+}
+
+.outgoing {
+    background-color: #d1f5d3;
+}
