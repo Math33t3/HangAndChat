@@ -26,7 +26,7 @@ export const sessionMiddleware = session({
         expires: 1000 * 60 * 60 * 24,
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
-    store: db.createSessionStore(), // Set up the session store using the createSessionStore function
+    store: db.createSessionStore(), 
 });
 
 export const compatibility = expressMiddleware => (socket, next) =>
@@ -93,7 +93,6 @@ export const checkLoggedIn = (req, res, next) => {
     }
 };
 export async function fetchMessages(userId) {
-    // Assuming you have a 'messages' collection in your MongoDB
     const messages = await db.collection('messages').find({
         $or: [{ to: userId }, { from: userId }]
     }).toArray();
