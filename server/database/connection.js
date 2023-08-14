@@ -5,6 +5,63 @@ const URL = "mongodb://127.0.0.1:27017";
 const client = new MongoClient(URL);
 const db = client.db("fullstackChatroom");
 
+(async () => {
+    try {
+        await client.connect();
+        console.log('Connected to MongoDB');
+        await populateHangmanWordlist(); //indsætter vores wordlist data
+    } catch (error) {
+        console.error('Error connecting to MongoDB:', error);
+    }
+})();
+
+export default {
+    users: db.collection("users"),
+    wordList: db.collection("HangmanWordlist"),
+    messages: db.collection("messages"),
+    rateLimits: db.collection("rateLimits"),
+    client: client, 
+    createSessionStore: () => {
+        const sessions = db.collection("sessions");
+        
+        return new MongoSessionStore(sessions);
+    }
+};
+
+class MongoSessionStore extends session.Store {
+    constructor(sessions) {
+        super();
+        this.sessions = sessions;
+    }
+
+    async get(sid, callback) {
+        try {
+            const session = await this.sessions.findOne({ _id: sid });
+            callback(null, session ? session.session : null);
+        } catch (error) {
+            callback(error);
+        }
+    }
+
+    async set(sid, session, callback) {
+        try {
+            await this.sessions.updateOne({ _id: sid }, { $set: { session } }, { upsert: true });
+            callback(null);
+        } catch (error) {
+            callback(error);
+        }
+    }
+
+    async destroy(sid, callback) {
+        try {
+            await this.sessions.deleteOne({ _id: sid });
+            callback(null);
+        } catch (error) {
+            callback(error);
+        }
+    }
+}
+
 async function populateHangmanWordlist() {
     try {
         const wordListCollection = db.collection("HangmanWordlist");
@@ -279,62 +336,5 @@ async function populateHangmanWordlist() {
         console.log('HangmanWordlist collection populated successfully');
     } catch (error) {
         console.error('Error populating HangmanWordlist collection:', error);
-    }
-}
-
-(async () => {
-    try {
-        await client.connect();
-        console.log('Connected to MongoDB');
-        //await db.collection("HangmanWordlist").deleteMany({});
-        await populateHangmanWordlist(); //indsætter vores wordlist data
-    } catch (error) {
-        console.error('Error connecting to MongoDB:', error);
-    }
-})();
-
-export default {
-    users: db.collection("users"),
-    wordList: db.collection("HangmanWordlist"),
-    messages: db.collection("messages"),
-    client: client, 
-    createSessionStore: () => {
-        const sessions = db.collection("sessions");
-        
-        return new MongoSessionStore(sessions);
-    }
-};
-
-class MongoSessionStore extends session.Store {
-    constructor(sessions) {
-        super();
-        this.sessions = sessions;
-    }
-
-    async get(sid, callback) {
-        try {
-            const session = await this.sessions.findOne({ _id: sid });
-            callback(null, session ? session.session : null);
-        } catch (error) {
-            callback(error);
-        }
-    }
-
-    async set(sid, session, callback) {
-        try {
-            await this.sessions.updateOne({ _id: sid }, { $set: { session } }, { upsert: true });
-            callback(null);
-        } catch (error) {
-            callback(error);
-        }
-    }
-
-    async destroy(sid, callback) {
-        try {
-            await this.sessions.deleteOne({ _id: sid });
-            callback(null);
-        } catch (error) {
-            callback(error);
-        }
     }
 }

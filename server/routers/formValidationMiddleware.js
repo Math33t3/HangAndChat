@@ -21,7 +21,6 @@ const formValidationMiddleware = (req, res, next) => {
     .validate(formData)
     .then(valid => {
       if (valid) {
-        console.log("Form is valid");
         next();
       } else {
         return res.status(422).send();
