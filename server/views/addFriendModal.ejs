@@ -43,7 +43,7 @@
             const friendName = input.value;
             socket.emit("addFriend", friendName, (response) => {
                 if (response.done) {
-                    // Update friends list here
+                    
                     closeModal();
                 } else {
                     showError(response.errorMessage);

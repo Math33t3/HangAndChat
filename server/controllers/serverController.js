@@ -92,27 +92,8 @@ export const checkLoggedIn = (req, res, next) => {
         next();
     }
 };
-export async function fetchMessages(userId) {
-    const messages = await db.collection('messages').find({
-        $or: [{ to: userId }, { from: userId }]
-    }).toArray();
 
-    return messages;
-}
-
-export async function fetchFriendsList(userId) {
-    return new Promise((resolve, reject) => {
-        redisClient.lrange(`chats:${userId}`, 0, -1, (error, messages) => {
-            if (error) {
-                reject(error);
-            } else {
-                const parsedMessages = messages.map((message) => JSON.parse(message));
-                resolve(parsedMessages);
-            }
-        });
-    });
-}
-export default { sessionMiddleware, compatibility, authorizeUser, corsServerConfig, fetchMessages };
+export default { sessionMiddleware, compatibility, authorizeUser, corsServerConfig };
 
 /*
 export const addFriend = async (socket, friendName, callback) => {

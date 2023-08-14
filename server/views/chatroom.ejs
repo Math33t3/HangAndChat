@@ -57,10 +57,13 @@
             </div>
 
             <script>
+
                 const userId = '<%= user.userId %>';
-                const messages = [];
                 let selectedFriendId;
-                let friendsList = [];
+                messages = [];
+                friendsList = [];
+                fetchAndAppendToMessages(userId);
+                fetchAndAppendToFriendsList(userId);
 
                 socket.on("messages", (receivedMessages) => {
                     console.log(receivedMessages);
@@ -84,8 +87,7 @@
                     });
                 }
 
-                socket.on("friends", (fList) => {
-                    friendsList = fList;
+                socket.on("friends", (friendsList) => {
                     const tabsContainer = document.getElementById("friendsList");
                     tabsContainer.innerHTML = "";
 
@@ -93,7 +95,7 @@
 
                     const chatPanelsContainer = document.getElementById("chat-panels"); // Add this line
 
-                    fList.forEach((friend) => {
+                    friendsList.forEach((friend) => {
                         const tab = document.createElement("div");
                         tab.textContent = friend.username;
                         tab.classList.add("friend-tab");
@@ -125,7 +127,7 @@
                         });
                     });
 
-                    console.log("Received friendsList from server:", fList);
+                    console.log("Received friendsList from server:", friendsList);
                 });
 
 
@@ -163,6 +165,38 @@
                 socket.on("directMessage", (message) => {
                     updateChatMessages([message]);
                 });
+
+                async function fetchAndAppendToMessages(userId) {
+                    try {
+                        const response = await fetch("http://localhost:8080/api/messages");
+                        const data = await response.json();
+                        console.log(data);
+
+                        if (data.messages && Array.isArray(data.messages)) {
+                            messages.push(...data.messages);
+                            console.log("Messages:", messages);
+                        } else {
+                            console.error("Invalid response data:", data);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching messages:", error);
+                    }
+                }
+                async function fetchAndAppendToFriendsList(userId) {
+                    try {
+                        const response = await fetch("http://localhost:8080/api/friendslist");
+                        const data = await response.json();
+
+                        if (data.friendsList && Array.isArray(data.friendsList)) {
+                            friendsList.push(...data.friendsList);
+                            console.log("FriendsList:", friendsList);
+                        } else {
+                            console.error("Invalid response data:", data);
+                        }
+                    } catch (error) {
+                        console.error("Error fetching the friendslist:", error);
+                    }
+                }
             </script>
 </body>
 

@@ -85,9 +85,16 @@ export const initializeSocket = (server) => {
         }
 
         await db.users.updateOne(
-            { username: socket.user.username },
-            { $addToSet: { friends: friendUser._id } }
-        );
+          { username: socket.user.username },
+          {
+              $addToSet: {
+                  friends: {
+                      userId: friendUser._id,
+                      username: friendUser.username
+                  }
+              }
+          }
+      );
 
         callback({ done: true });
     } catch (error) {

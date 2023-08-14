@@ -7,7 +7,8 @@ import helmet from "helmet";
 import cors from "cors";
 import authRouter from "./routers/authRouter.js";
 import hangmanRouter from "./routers/hangmanRouter.js"
-import { sessionMiddleware, protectRoutes, checkLoggedIn, corsServerConfig, fetchMessages } from "./controllers/serverController.js";
+import { sessionMiddleware, protectRoutes, checkLoggedIn, corsServerConfig } from "./controllers/serverController.js";
+import { fetchMessages, fetchFriendsList } from "./controllers/apiController.js";
 import { initializeSocket } from "./controllers/socketController.js";
 app.use(express.static('public'))
 
@@ -53,14 +54,23 @@ app.get("/chatroom", (req, res) => {
 
 app.get("/api/messages", async (req, res) => {
   try {
-      const userId = req.user.userId;
-      const messages = await fetchMessages(userId);
-      const friendsList = socket.user.friendsList;
+      const userId = req.session.user.userId;
+      const messages = await fetchMessages(userId)
 
-      res.render("chatroom", { user: req.user, messages, friendsList });
+      res.send( { messages: messages });
   } catch (error) {
-      console.error("Error fetching messages:", error);
       res.status(500).json({ error: "An error occurred while fetching messages." });
+  }
+});
+
+app.get("/api/friendslist", async (req, res) => {
+  try {
+      const userId = req.session.user.userId;
+      const friendsList = await fetchFriendsList(userId)
+
+      res.send({ friendsList: friendsList });
+  } catch (error) {
+      res.status(500).json({ error: "An error occurred while fetching the friendslist." });
   }
 });
 
