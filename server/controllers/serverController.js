@@ -48,7 +48,7 @@ export const authorizeUser = async (socket, next) => {
                 { $set: { connected: true } }
             );
             
-            const user = await db.users.findOne({ username: socket.user.username });
+            /*const user = await db.users.findOne({ username: socket.user.username });
             const friendsList = user.friends || [];
             const friendRooms = friendsList.map(friend => friend.toString());
             if (friendRooms.length > 0) {
@@ -61,7 +61,7 @@ export const authorizeUser = async (socket, next) => {
             }).toArray();
             if (messages && messages.length > 0) {
                 socket.emit("messages", messages);
-            }
+            }*/
             next();
         }
     } catch (error) {

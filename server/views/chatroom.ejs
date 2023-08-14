@@ -17,12 +17,9 @@
     <div id="chatContainer">
         <div id="friendsList"></div>
 
-        <div id="chatMessages">
-
-        </div>
+        <div id="chatMessages"></div>
+        <div id="chat-panels"></div>
         <% if (friendsList && friendsList.length> 0) { %>
-            <div id="chat-panels"></div>
-
             <% friendsList.forEach((friend)=> { %>
                 <div class="chat-panel" id="chat-<%= friend.userId %>">
                     <div class="message-container">
@@ -56,8 +53,9 @@
             </div>
             </div>
 
-            <script>
 
+
+            <script>
                 const userId = '<%= user.userId %>';
                 let selectedFriendId;
                 messages = [];
@@ -65,14 +63,15 @@
                 fetchAndAppendToMessages(userId);
                 fetchAndAppendToFriendsList(userId);
 
-                socket.on("messages", (receivedMessages) => {
+                /*socket.on("messages", (receivedMessages) => {
                     console.log(receivedMessages);
                     messages.push(...receivedMessages);
                     updateChatMessages(messages, userId);
-                });
+                });*/
+
                 function updateChatMessages(messages, userId, friendId) {
                     const selectedFriendChatMessages = document.getElementById("selectedFriendChatMessages");
-                    selectedFriendChatMessages.innerHTML = "";
+                    selectedFriendChatMessages.innerHTML = ""; 
 
                     messages.forEach((message) => {
                         if ((message.from === userId || message.to === userId) && (message.from === friendId || message.to === friendId)) {
@@ -81,79 +80,13 @@
                             messageElement.textContent = `${senderUsername}: ${message.content}`;
                             messageElement.classList.add((message.from === userId) ? "outgoing" : "incoming");
 
-                            const chatPanel = document.getElementById(`chat-${friendId}`);
-                            chatPanel.appendChild(messageElement);
+                            selectedFriendChatMessages.appendChild(messageElement);
                         }
                     });
                 }
-
-                socket.on("friends", (friendsList) => {
-                    const tabsContainer = document.getElementById("friendsList");
-                    tabsContainer.innerHTML = "";
-
-                    selectedFriendId = undefined;
-
-                    const chatPanelsContainer = document.getElementById("chat-panels"); // Add this line
-
-                    friendsList.forEach((friend) => {
-                        const tab = document.createElement("div");
-                        tab.textContent = friend.username;
-                        tab.classList.add("friend-tab");
-                        tabsContainer.appendChild(tab);
-
-                        tab.addEventListener("click", () => {
-                            selectedFriendId = friend.userId;
-                            const chatPanels = document.querySelectorAll(".chat-panel");
-
-                            chatPanels.forEach((panel) => {
-                                panel.classList.remove("active"); // Hide all chat panels
-                            });
-
-                            const selectedFriendChat = document.getElementById(`chat-${selectedFriendId}`);
-                            if (selectedFriendChat) {
-                                selectedFriendChat.classList.add("active"); // Show the selected friend's chat panel
-                            } else {
-                                // Create the chat panel if it doesn't exist
-                                const chatPanel = document.createElement("div");
-                                chatPanel.classList.add("chat-panel");
-                                chatPanel.id = `chat-${selectedFriendId}`;
-                                chatPanelsContainer.appendChild(chatPanel);
-                            }
-
-                            console.log("Switching to chat with", friend);
-
-                            // Update chat messages for the selected friend
-                            updateChatMessages(messages, userId, selectedFriendId);
-                        });
-                    });
-
-                    console.log("Received friendsList from server:", friendsList);
-                });
-
 
                 const chatForm = document.getElementById("chat-form");
                 const messageInput = document.getElementById("message");
-
-                async function sendMessage(content, selectedFriendId) {
-                    if (content.trim() !== "" && selectedFriendId) {
-                        const message = {
-                            to: selectedFriendId,
-                            content: content,
-                            from: userId
-                        };
-
-                        try {
-                            console.log("Before emitting message:", message);
-                            await socket.emit("directMessage", message);
-                            console.log("After emitting message:", message);
-
-                            messages.push(message);
-                            updateChatMessages(messages, userId);
-                        } catch (error) {
-                            console.error("Error emitting directMessage:", error);
-                        }
-                    }
-                }
 
                 chatForm.addEventListener("submit", async (event) => {
                     event.preventDefault();
@@ -182,6 +115,8 @@
                         console.error("Error fetching messages:", error);
                     }
                 }
+
+
                 async function fetchAndAppendToFriendsList(userId) {
                     try {
                         const response = await fetch("http://localhost:8080/api/friendslist");
@@ -190,6 +125,40 @@
                         if (data.friendsList && Array.isArray(data.friendsList)) {
                             friendsList.push(...data.friendsList);
                             console.log("FriendsList:", friendsList);
+
+                            
+                            const tabsContainer = document.getElementById("friendsList");
+                            tabsContainer.innerHTML = "";
+
+                            friendsList.forEach((friend) => {
+                                const tab = document.createElement("div");
+                                tab.textContent = friend.username;
+                                tab.classList.add("friend-tab");
+                                tabsContainer.appendChild(tab);
+
+                                tab.addEventListener("click", async () => {
+
+                                    selectedFriendId = friend.userId; 
+                                    const chatPanels = document.querySelectorAll(".chat-panel");
+
+                                    chatPanels.forEach((panel) => {
+                                        panel.classList.remove("active");
+                                    });
+
+                                    let selectedFriendChat = document.getElementById(`chat-${selectedFriendId}`);
+                                    if (!selectedFriendChat) {
+                                        selectedFriendChat = document.createElement("div");
+                                        selectedFriendChat.classList.add("chat-panel", "active");
+                                        selectedFriendChat.id = `chat-${selectedFriendId}`;
+                                        document.getElementById("chat-panels").appendChild(selectedFriendChat);
+                                        selectedFriendChat = document.getElementById(`chat-${selectedFriendId}`);
+                                    } else {
+                                        selectedFriendChat.classList.add("active");
+                                    }
+
+                                    updateChatMessages(messages, userId, selectedFriendId);
+                                });
+                            });
                         } else {
                             console.error("Invalid response data:", data);
                         }
@@ -197,7 +166,24 @@
                         console.error("Error fetching the friendslist:", error);
                     }
                 }
-            </script>
-</body>
 
-</html>
+                async function sendMessage(content, selectedFriendId) {
+                    if (content.trim() !== "" && selectedFriendId) {
+                        const message = {
+                            to: selectedFriendId,
+                            content: content,
+                            from: userId
+                        };
+
+                        try {
+                            await socket.emit("directMessage", message);
+                            console.log("After emitting message:", message);
+
+                            messages.push(message);
+                            updateChatMessages(messages, userId);
+                        } catch (error) {
+                            console.error("Error emitting directMessage:", error);
+                        }
+                    }
+                }
+            </script>
