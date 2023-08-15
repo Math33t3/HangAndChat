@@ -98,5 +98,18 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(error => {
                 console.error('Error fetching wordList:', error);
             });
+
+            socket.on("updateUserStatistics", (hangmanRecords) => {
+                const totalGames = hangmanRecords.length;
+                const wins = hangmanRecords.filter(record => record.isWin).length;
+                const losses = totalGames - wins;
+                const winPercentage = (wins / totalGames) * 100;
+        
+                
+                document.getElementById("totalGames").innerText = totalGames;
+                document.getElementById("wins").innerText = wins;
+                document.getElementById("losses").innerText = losses;
+                document.getElementById("winPercentage").innerText = winPercentage.toFixed(2) + "%";
+            });
     });
 });

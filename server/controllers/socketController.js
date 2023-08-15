@@ -30,6 +30,8 @@ export const initializeSocket = (server) => {
           { userId: socket.user.userId },
           { $push: { hangmanRecords: { isWin: data.isWin, timestamp: new Date() } } }
         );
+        const user = await db.users.findOne({ userId: socket.user.userId });
+        socket.emit("updateUserStatistics", user.hangmanRecords);
       } catch (error) {
         console.error("Error saving game result to database:", error);
       }

@@ -24,17 +24,17 @@
                 <% const losses = totalGames - wins; %>
                 <% const winPercentage = (wins / totalGames) * 100; %>
                 <tr>
-                    <td><%= totalGames %></td>
-                    <td><%= wins %></td>
-                    <td><%= losses %></td>
-                    <td><%= winPercentage.toFixed(2) %>%</td>
+                    <td id="totalGames"><%= totalGames %></td>
+                    <td id="wins"><%= wins %></td>
+                    <td id="losses"><%= losses %></td>
+                    <td id="winPercentage"><%= winPercentage.toFixed(2) %>%</td>
                 </tr>
             <% } else { %>
                 <tr>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>0</td>
-                    <td>0.00%</td>
+                    <td id="totalGames">0</td>
+                    <td id="wins">0</td>
+                    <td id="losses">0</td>
+                    <td id="winPercentage">0.00%</td>
                 </tr>
             <% } %>
         </table>
