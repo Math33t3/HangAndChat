@@ -58,7 +58,6 @@
           if (data && data.loggedIn) {
             const socket = io();
             socket.on("connect", function () {
-              console.log("Socket.IO connected");
               redirectToHome();
             });
           } else if (data && data.status) {

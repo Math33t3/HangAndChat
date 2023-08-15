@@ -42,7 +42,6 @@ export const initializeSocket = (server) => {
         const existingWord = existingWords.find(word => word.word.toLowerCase() === data.word.toLowerCase());
 
         if (!existingWord) {
-          // The word doesn't exist, so we can add it to the database
           await db.wordList.insertOne({
             word: data.word,
             hint: data.hint,
@@ -63,95 +62,55 @@ export const initializeSocket = (server) => {
     });
   });
 
-  async function addFriend(socket, friendName, callback) {
-    if (friendName === socket.user.username) {
-        callback({ done: false, errorMessage: "Cannot befriend yourself" });
-        return;
-    }
-
-    try {
-        const friendUser = await db.users.findOne({ username: friendName });
-
-        if (!friendUser) {
-            callback({ done: false, errorMessage: "Invalid User" });
-            return;
-        }
-
-        const currentUser = await db.users.findOne({ username: socket.user.username, friends: friendUser._id });
-
-        if (currentUser) {
-            callback({ done: false, errorMessage: "You are already friends" });
-            return;
-        }
-
-        await db.users.updateOne(
-          { username: socket.user.username },
-          {
-              $addToSet: {
-                  friends: {
-                      userId: friendUser._id,
-                      username: friendUser.username
-                  }
-              }
-          }
-      );
-
-        callback({ done: true });
-    } catch (error) {
-        console.error('Error adding friend:', error);
-        callback({ done: false, errorMessage: "An error occurred" });
-    }
-}
   async function handleDirectMessage(socket, message) {
-    console.log("Received directMessage:", message);
     message.from = socket.user.userId;
     try {
         await db.messages.insertOne(message);
 
-        socket.to(message.to).emit("directMessage", message);
-        socket.emit("directMessage", message);
+        io.emit("directMessage", message); // Emit to all sockets
     } catch (error) {
         console.error('Error inserting message:', error);
     }
 }
-  /*
-
-  REDIS FUNCTIONER
-  async function handleDirectMessage(socket, message) {
-    console.log("Received directMessage:", message);
-    message.from = socket.user.userId;
-
-    const messageStore = [message.to, message.from, message.content].join(".");
-
-    await redisClient.lpush(`chat:${message.to}`, messageStore);
-    await redisClient.lpush(`chat:${message.from}`, messageStore);
-
-    socket.to(message.to).emit("directMessage", message);
-    socket.emit("directMessage", message);
 
 
-
-
-      async function addFriend(socket, friendName, callback) {
+  async function addFriend(socket, friendName, callback) {
     if (friendName === socket.user.username) {
       callback({ done: false, errorMessage: "Cannot befriend yourself" });
       return;
     }
-    const friendUserId = await redisClient.hget(`userid:${friendName}`, "userId");
-    const existingFriends = await redisClient.lrange(`friends:${socket.user.username}`, 0, -1)
 
-    if (!friendUserId) {
-      callback({ done: false, errorMessage: "Invalid User" });
-      return;
+    try {
+      const friendUser = await db.users.findOne({ username: friendName });
+
+      if (!friendUser) {
+        callback({ done: false, errorMessage: "Invalid User" });
+        return;
+      }
+
+      const currentUser = await db.users.findOne({ username: socket.user.username, friends: friendUser._id });
+
+      if (currentUser) {
+        callback({ done: false, errorMessage: "You are already friends" });
+        return;
+      }
+
+      await db.users.updateOne(
+        { username: socket.user.username },
+        {
+          $addToSet: {
+            friends: {
+              userId: friendUser._id,
+              username: friendUser.username
+            }
+          }
+        }
+      );
+
+      callback({ done: true });
+    } catch (error) {
+      console.error('Error adding friend:', error);
+      callback({ done: false, errorMessage: "An error occurred" });
     }
-    if (existingFriends && existingFriends.indexOf(friendName) !== -1) {
-      callback({ done: false, errorMessage: "You are already friends" });
-      return;
-    }
-
-    await redisClient.lpush(`friends:${socket.user.username}`, friendName);
-    callback({ done: true });
-  };
-}*/
-
+  }
 };
