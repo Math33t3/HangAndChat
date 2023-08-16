@@ -343,6 +343,11 @@
     color: #333;
     margin-bottom: 20px;
 }
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
 /* Hangman Scores Styles */
 .hangman-scores {
@@ -431,6 +436,50 @@
 
 .outgoing {
     background-color: #d1f5d3;
+}
+
+/*buttons og input mm.*/
+button,
+input[type="submit"],
+input[type="button"] {
+    background-color: #8286c9;
+    color: #ffffff;
+    border: none;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+button:hover,
+input[type="submit"]:hover,
+input[type="button"]:hover {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+textarea {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="search"]:focus,
+textarea:focus {
+    border-color: #5E63BA;
 }
 
 /* Responsive Styles */
