@@ -33,21 +33,18 @@
                             </div>
                         </div>
                         <% }); %>
-            </div>
-            <% } else { %>
-                <div class="no-friends">
-                    <p>You've got no friends</p>
-                </div>
-                <% } %>
-                    <div id="selectedFriendChat" style="display: none;"></div>
-                    <div id="selectedFriendChatMessages"></div>
+                            <% } %>
+                                <div id="selectedFriendChat" style="display: none;"></div>
+                                <div id="selectedFriendChatMessages"></div>
 
-                    <div id="messageInput">
-                        <form id="chat-form" method="POST">
-                            <input type="text" id="message" name="message" placeholder="Type here" autocomplete="off">
-                            <button type="submit">Send</button>
-                        </form>
-                    </div>
+                                <div id="messageInput">
+                                    <form id="chat-form" method="POST">
+                                        <input type="text" id="message" name="message" placeholder="Type here"
+                                            autocomplete="off">
+                                        <button type="submit">Send</button>
+                                    </form>
+                                </div>
+            </div>
     </div>
     <script>
         const userId = '<%= user.userId %>';
@@ -94,7 +91,7 @@
             try {
                 const response = await fetch("http://localhost:8080/api/messages");
                 const data = await response.json();
-            
+
                 if (data.messages && Array.isArray(data.messages)) {
                     messages.push(...data.messages);
                 } else {
@@ -112,7 +109,7 @@
 
                 if (data.friendsList && Array.isArray(data.friendsList)) {
                     friendsList.push(...data.friendsList);
-                    
+
                     const tabsContainer = document.getElementById("friendsList");
                     tabsContainer.innerHTML = "";
 
@@ -167,3 +164,6 @@
             }
         }
     </script>
+</body>
+
+</html>
