@@ -16,17 +16,29 @@ export async function fetchFriendsList(userId) {
 
         const friendsList = user.friends || [];
 
-        // Fetch additional friend information and add userId and username to each friend
         const updatedFriendsList = await Promise.all(friendsList.map(async (friend) => {
             const friendInfo = await db.users.findOne({ username: friend.username });
             return { userId: friendInfo.userId, username: friend.username };
         }));
-        console.log(updatedFriendsList);
         return updatedFriendsList;
     } catch (error) {
         console.error("Error fetching friends list:", error);
         throw error;
     }
 }
+export async function fetchHangmanRecords(userId) {
+    try {
+        const user = await db.users.findOne({ userId: userId }); 
+        if (!user) {
+            throw new Error("User not found");
+        }
 
-export default {fetchMessages, fetchFriendsList};
+        const hangmanRecords = user.hangmanRecords || [];
+        return hangmanRecords;
+    } catch (error) {
+        console.error("Error fetching hangman records:", error);
+        throw error;
+    }
+}
+
+export default {fetchMessages, fetchFriendsList, fetchHangmanRecords};
