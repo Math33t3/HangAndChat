@@ -22,11 +22,6 @@ app.use(sessionMiddleware);
 app.use("/auth", authRouter);
 app.use(protectRoutes);
 
-app.use((req, res, next) => {           //tillader inline scripts
-  res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline'");
-  next();
-});
-
 app.set('view engine', 'ejs');
 app.use(hangmanRouter);
 

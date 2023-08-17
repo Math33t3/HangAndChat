@@ -16,6 +16,7 @@
     </nav>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        const socket = io();
         document.getElementById("logout-btn").addEventListener("click", () => {
             fetch("/auth/logout", {
                 method: "GET",
@@ -23,6 +24,7 @@
             })
                 .then((res) => {
                     if (res.ok) {
+                        socket.emit("logout");
                         window.location.href = "/login";
                     }
                 })

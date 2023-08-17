@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    let correctWord, correctLetters, wrongGuessCount; // Declare correctWord variable outside of any function scope
+    let correctWord, correctLetters, wrongGuessCount;
     const socket = io();
 
     function handleAddToWordlistSubmit(e) {
@@ -25,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const maxGuesses = 6;
 
         const resetGame = () => {
-            // Resetting game variables and UI elements
             correctLetters = [];
             wrongGuessCount = 0;
             hangmanImage.src = "images/hangman-0.svg";
@@ -37,28 +36,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
         const getRandomWord = () => {
-            // Selecting a random word and hint from the wordList
             const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
-            correctWord = randomWord.word; // Updated variable name
+            correctWord = randomWord.word;
             document.querySelector(".hint-text b").innerText = randomWord.hint;
             resetGame();
         };
 
         const gameOver = (isVictory) => {
-            // After game complete.. showing modal with relevant details
             const modalText = isVictory ? `You found the word:` : "The correct word was:";
             gameModal.querySelector("img").src = `images/${isVictory ? "victory" : "lost"}.gif`;
             gameModal.querySelector("h4").innerText = isVictory ? "Congrats!" : "Game Over!";
-            gameModal.querySelector("p b").innerText = correctWord; // Display the correctWord
+            gameModal.querySelector("p b").innerText = correctWord; // viser correctWord
             gameModal.classList.add("show");
             socket.emit('gameOver', { isWin: isVictory });
         };
 
         const initGame = (button, clickedLetter) => {
-            // Checking if clickedLetter exists in the correctWord
-            if (correctWord.includes(clickedLetter)) { // Updated variable name
-                // Showing all correct letters on the word display
-                [...correctWord].forEach((letter, index) => { // Updated variable name
+            if (correctWord.includes(clickedLetter)) { 
+                [...correctWord].forEach((letter, index) => { 
                     if (letter === clickedLetter) {
                         correctLetters.push(letter);
                         wordDisplay.querySelectorAll("li")[index].innerText = letter;
@@ -66,20 +61,20 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 });
             } else {
-                // If clicked letter doesn't exist, update the wrongGuessCount and hangman image
                 wrongGuessCount++;
                 hangmanImage.src = `images/hangman-${wrongGuessCount}.svg`;
             }
-            button.disabled = true; // Disabling the clicked button so the user can't click again
+            button.disabled = true; //undgår at man kan trykke flere gange på samme bogstav
             guessesText.innerText = `${wrongGuessCount} / ${maxGuesses}`;
-            // Call gameOver function if any of these conditions are met
+    
             if (wrongGuessCount === maxGuesses) return gameOver(false);
-            if (correctLetters.length === correctWord.length) return gameOver(true); // Updated variable name
+            if (correctLetters.length === correctWord.length) return gameOver(true); 
         };
 
 
-        // Creating keyboard buttons and adding event listeners
+        
         for (let i = 97; i <= 122; i++) {
+            //bruger bogstavers ASCII 
             const button = document.createElement("button");
             button.innerText = String.fromCharCode(i);
             keyboardDiv.appendChild(button);

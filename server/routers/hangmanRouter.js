@@ -4,7 +4,7 @@ import { fetchFriendsList, fetchHangmanRecords } from "../controllers/apiControl
 
 const router = Router();
 
-router.use((req, res, next) => {           //inline scripts
+router.use((req, res, next) => {           //tillader inline scripts
     res.setHeader("Content-Security-Policy", "script-src 'self' 'unsafe-inline'");
     next();
   });
@@ -42,10 +42,6 @@ router.get('/highscoresFriends', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
-});
-
-router.get('/addToHangman', (req, res) => {
-    res.render('addToHangman');
 });
 
 router.get('/api/hangman/wordList', async (req, res) => {

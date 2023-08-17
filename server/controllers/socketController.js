@@ -59,7 +59,6 @@ export const initializeSocket = (server) => {
     });
 
     socket.on("logout", () => {
-      console.log("User has logged out");
       socket.disconnect();
     });
   });

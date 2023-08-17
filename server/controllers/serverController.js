@@ -46,7 +46,7 @@ export const authorizeUser = async (socket, next) => {
 
 export const protectRoutes = (req, res, next) => {
     if (req.session.user && req.session.user.username) {
-        // User authenticated
+        // User er authenticated
         next();
     } else {
         // User er ikke authenticated --> redirect to login

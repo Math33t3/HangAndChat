@@ -61,7 +61,7 @@
                 return sortingDirection * aValue.localeCompare(bValue, undefined, { numeric: true });
             };
             rows.sort(sortFunction);
-            tableBody.innerHTML = ''; //
+            tableBody.innerHTML = ''; 
             rows.forEach(row => {
                 tableBody.appendChild(row);
             });
